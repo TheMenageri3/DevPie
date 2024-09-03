@@ -11,7 +11,7 @@ def process_csv(file_path: str):
     user_id_to_names: Dict[str, Set[str]] = {}
 
     # Keywords to check in commit messages
-    keywords = ["boilerplate", "scaffolding", "scaffold", "scaff"]
+    keywords = ["boilerplate", "scaffolding", "scaffold", "scaff", "initial", "setup"]
 
     # Read the CSV file
     with open(file_path, mode='r') as file:
@@ -27,8 +27,8 @@ def process_csv(file_path: str):
 
             # Check if the commit message contains any of the keywords
             if any(keyword in commit_message.lower() for keyword in keywords):
-                author_points = 10
-                committer_points = 10
+                author_points = 5
+                committer_points = 5
             else:
                 author_points = 100 + (25 * lines_added) + (50 * lines_deleted)
                 committer_points = 100 + (25 * lines_added) + (50 * lines_deleted)

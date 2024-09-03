@@ -1,0 +1,9 @@
+1. Boilerplate, scaffolding, or general init code commits should contain the following keywords: "initial", "boilerplate", "scaffold", or "setup" in their titles and/or commit message, and should be committed separately without any alterations.
+
+2. Pull requests should allow maintainers to edit during review.
+
+3. Branch protection rules should include requiring multiple reviewers; > 1. 
+
+4. The author of the PR is allowed to be a reviwer, but can not commit their own code by themselves.
+
+5. 

@@ -1,0 +1,6 @@
+1. Institute a check on the PR or commit message for the keywords "init", "initial", "boilerplate", "scaffold", "scaffolding", or "setup". 
+If found, the PR and commit should give 5 points each for the author and every reviewer, but not award any points for the number of lines added or deleted by anyone.
+
+2. Make a list of the /activity endpoint and its data that you could consider valuable to add.
+
+3. Make a list of the /contributors endpoint and its data that you could consider valuable to add.
