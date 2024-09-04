@@ -4,3 +4,30 @@ If found, the PR and commit should give 5 points each for the author and every r
 2. Make a list of the /activity endpoint and its data that you could consider valuable to add.
 
 3. Make a list of the /contributors endpoint and its data that you could consider valuable to add.
+
+
+Refactor Algorithm:
+
+List team members from /team. Identify users by their UID and carry this through the rest of the algorithm.
+
+Contributors are assessed and given points for all lines added and deleted at a base rate of 2x points for deleted lines over 1x points for added lines. Use the /contributors endpoint. Extra, undesired Boilerplate points will be removed when the /commits endpoint is queried next. Exclude bots and github.
+
+Now check /commits endpoint; remove lines added from any line additions or deletions for the authors and committers in boilerplate and scaffolding code. 
+
+Check the status of commits: Success = 100 points, failure = 10, if pending found, continue, but send an alert message that a commit is pending and rerun once all commits are success or failure.
+
+Add points for authors and reviewers of each commit. 100 for author, 75 for committers. If Author is a committer, he gets 50 for being a committer, so 150 total for both being author and a committer. This means other non-authors are more incentivized to review another's code and commit it than the author is for his own code.
+
+Verified commits receive a bonus, unverified commits receive no bonus but are otherwise not penalized.
+
+Add points for each commenter with >= 1 comment on each commit or its associated PRs. Max 10 points for commenting (1 comment = 10 points).
+
+Consider the /projects endpoint through the repository.
+
+From /activity or other available endpoint, add the user's type to the csv. 
+
+Use /repos/{owner}/{repo}/issues to create a list of all currently open issues, including labels. Display these in the final graph/dashboard representation for an overview. No points are yet awarded for issues, but this may change. Bugs and other labels may be considered, especially if associated to a commit/PR.
+
+If possible, associate the a repository's issues with the commits and PRs that are associated with them, and award points for fixing issues.
+
+A new feature is worth 1.5x the points of a bug fix.
