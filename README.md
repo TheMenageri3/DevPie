@@ -83,3 +83,7 @@ In general, to ensure the integrity of the pie, stricter rules and procedures wi
 3. All boilerplate code (ANY CODE THAT YOU ADD BUT DIDN'T ACTUALLY WRITE), should be committed as its OWN PR, with NO ADDITIONAL CHANGES from the authoring developer. This includes things such as "git init" or addition of a front-end boilerplate framework, addition of packages and dependencies (this may be handled differently in the future by the algorithm if possible to avoid unnecessary headaches for developers committing such files), etc..
 
 4. Other commit rules intended to protect the integrity of the project and the final pie will be added here for consideration as they become apparently necessary.
+
+--- 
+
+Use or alteration of this software is entirely of your own volition. The author(s) of this software act in good faith. They accept no responsibility nor liability for its use, outcomes, dissemination of said outcomes, nor alteration of its codebase and their subsequent outcomes; ubiquitously, and for all time.

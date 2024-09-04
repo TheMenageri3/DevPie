@@ -1,4 +1,4 @@
-import requests # type: ignore
+import requests
 import csv
 import yaml # type: ignore
 import os
@@ -14,15 +14,29 @@ with open(config_path, 'r') as file:
 # GitHub repository details
 owner = 'Web3-Builders-Alliance'
 repo = 'soda'
-commits_url = f'https://api.github.com/repos/{owner}/{repo}/commits'
+base_url = f'https://api.github.com/repos/{owner}/{repo}'
 
 headers = {
     'Authorization': f'token {token}'
 }
 
-# Make a request to the GitHub API to get commit data
-response = requests.get(commits_url, headers=headers)
-commits = response.json()
+# Keywords to check in commit messages
+keywords = ["boilerplate", "scaffolding", "scaffold", "scaff", "initial", "setup"]
+
+# Fetch commit data
+commits_url = f'{base_url}/commits'
+commits_response = requests.get(commits_url, headers=headers)
+commits = commits_response.json()
+
+# Fetch contributor data
+contributors_url = f'{base_url}/contributors'
+contributors_response = requests.get(contributors_url, headers=headers)
+contributors = contributors_response.json()
+
+# Fetch issues data
+issues_url = f'{base_url}/issues'
+issues_response = requests.get(issues_url, headers=headers)
+issues = issues_response.json()
 
 # Format the CSV file name with the owner and repo values
 csv_file_name = f'{owner}_{repo}_commits.csv'
@@ -31,7 +45,7 @@ csv_file_name = f'{owner}_{repo}_commits.csv'
 with open(csv_file_name, mode='w', newline='') as file:
     writer = csv.writer(file)
     # Write the header row
-    writer.writerow(["SHA", "Author", "Author ID", "Committer", "Committer ID", "Date", "Message", "Lines Added", "Lines Deleted", "Verified"])
+    writer.writerow(["SHA", "Author", "Author ID", "Committer", "Committer ID", "Date", "Message", "Lines Added", "Lines Deleted", "Verified", "Points"])
 
     # Write commit data
     for commit in commits:
@@ -44,7 +58,7 @@ with open(csv_file_name, mode='w', newline='') as file:
         message = commit['commit']['message']
 
         # Fetch detailed commit information
-        commit_url = f'https://api.github.com/repos/{owner}/{repo}/commits/{sha}'
+        commit_url = f'{base_url}/commits/{sha}'
         commit_response = requests.get(commit_url, headers=headers)
         commit_details = commit_response.json()
 
@@ -61,6 +75,12 @@ with open(csv_file_name, mode='w', newline='') as file:
         if not sha.strip() or not author.strip() or not committer.strip() or not date.strip() or not message.strip():
             continue
 
-        writer.writerow([sha, author, author_id, committer, committer_id, date, message, lines_added, lines_deleted, verified])
+        # Evaluate points
+        if any(keyword in message.lower() for keyword in keywords):
+            points = 5
+        else:
+            points = 100 + (25 * lines_added) + (50 * lines_deleted)
 
-print("Commit data has been written to commits.csv")
+        writer.writerow([sha, author, author_id, committer, committer_id, date, message, lines_added, lines_deleted, verified, points])
+
+print(f"Commit data has been written to {csv_file_name}")
