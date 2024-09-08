@@ -68,6 +68,9 @@ def fetch_and_write_commits():
             else:
                 points = 100 + (25 * lines_added) + (50 * lines_deleted)
 
+            if verified:
+                points += 25
+
             writer.writerow([sha, author, author_id, committer, committer_id, date, message, lines_added, lines_deleted, verified, points])
 
     return csv_file_name

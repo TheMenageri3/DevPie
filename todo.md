@@ -8,7 +8,6 @@ Steps:
     - Award points for lines added and deleted:
       - 2x points for deleted lines.
       - 1x points for added lines.
-    - Remove undesired boilerplate points when querying the /commits endpoint.
 
 2. Filter Commits
     - Query the /commits endpoint.
@@ -25,7 +24,7 @@ Steps:
     - Authors: 100 points per commit.
     - Committers: 75 points per commit.
     - If the author is also the committer, they receive an additional 50 points (total 150 points).
-    - Verified commits receive a bonus; unverified commits receive no bonus but are not penalized.
+    - Verified commits receive a bonus 25 points; unverified commits receive no bonus but are not penalized.
 
 6. Reviewer and Commenter Points
     - Award points to reviewers:
@@ -43,7 +42,7 @@ Additional Considerations:
 - Award 1.5x points for new features compared to bug fixes.
 
 Endpoints Used:
-- /orgs/{org}/teams 
+- /orgs/{org}/teams (optional)
 - /repos/{owner}/{repo}/contributors
 - /repos/{owner}/{repo}/commits
 - /repos/{owner}/{repo}/projects

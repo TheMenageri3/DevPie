@@ -7,3 +7,23 @@
 4. The author of the PR is allowed to be a reviwer, but can not commit their own code by themselves.
 
 5. The use of a /team is optional, but encouraged.
+
+Points Algorithm
+The points algorithm in this script evaluates contributions based on commit messages, lines added/deleted, and whether the commit is verified. Here's a step-by-step breakdown:
+
+Keywords Check:
+
+If the commit message contains any of the keywords 
+["boilerplate", "scaffolding", "scaffold", "scaff", "initial", "setup"], 
+award 5 points to both the author and the committer.
+
+Lines Added/Deleted:
+
+If the commit message does not contain any of the keywords:
+- Award 100 points.
+- Add 25 points for each line added.
+- Add 50 points for each line deleted.
+
+Verified Commit:
+
+If the commit is verified, add an additional 25 points.
