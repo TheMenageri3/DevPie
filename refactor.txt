@@ -1,0 +1,18 @@
+The function to write the csv should also calculate the points for each commit.
+
+mkdir {owner}_{repo}/
+
+1 csv for each endpoint
+
+    1 for /commits
+
+    1 for /contributors
+
+    1 for /issues
+
+---
+
+1. From /repos/{owner}/{repo}/contributors list the contributors by "login" and "id", and the number of contributions by each, excluding contributors where type is "Bot".
+Create its own csv file of the contributors, with the repo name as the file name and title of the bar graph, where the names, grouped with id, and # of contributions.
+2. 
+

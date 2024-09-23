@@ -71,7 +71,34 @@ def fetch_and_write_commits():
             if verified:
                 points += 25
 
-            writer.writerow([sha, author, author_id, committer, committer_id, date, message, lines_added, lines_deleted, verified, points])
+            if "github" in author.lower():
+                author_id = None
+            if "github" in committer.lower():
+                committer_id = None
+
+            if author_id:
+                writer.writerow([sha, author, author_id, committer, committer_id, date, message, lines_added, lines_deleted, verified, points])
+
+    return csv_file_name
+
+# Function to fetch contributors and write to CSV
+def fetch_and_write_contributors():
+    contributors_url = f'{base_url}/contributors'
+    response = requests.get(contributors_url, headers=headers)
+    contributors = response.json()
+
+    csv_file_name = f'{repo}_contributors.csv'
+    with open(csv_file_name, mode='w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(["Login", "ID", "Contributions"])
+
+        for contributor in contributors:
+            if contributor['type'] == 'Bot':
+                continue
+            login = contributor['login']
+            user_id = contributor['id']
+            contributions = contributor['contributions']
+            writer.writerow([login, user_id, contributions])
 
     return csv_file_name
 
@@ -87,38 +114,24 @@ def process_csv(file_path: str):
             author_name = row['Author']
             committer_id = row['Committer ID']
             committer_name = row['Committer']
-            lines_added = int(row['Lines Added'])
-            lines_deleted = int(row['Lines Deleted'])
-            commit_message = row['Message']
 
-            if any(keyword in commit_message.lower() for keyword in keywords):
-                author_points = 5
-                committer_points = 5
-            else:
-                author_points = 100 + (25 * lines_added) + (50 * lines_deleted)
-                committer_points = 100 + (25 * lines_added) + (50 * lines_deleted)
+            # Exclude GitHub or bot authors/committers
+            if "github" in author_name.lower() or "bot" in author_name.lower():
+                author_id = None
+            if "github" in committer_name.lower() or "bot" in committer_name.lower():
+                committer_id = None
 
-            if author_id not in user_id_to_names:
-                user_id_to_names[author_id] = set()
-            user_id_to_names[author_id].add(author_name)
+            if author_id:
+                points[author_id] = points.get(author_id, 0) + int(row['Points'])
+                if author_id not in user_id_to_names:
+                    user_id_to_names[author_id] = set()
+                user_id_to_names[author_id].add(author_name)
 
-            if committer_id not in user_id_to_names:
-                user_id_to_names[committer_id] = set()
-            user_id_to_names[committer_id].add(committer_name)
-
-            if "GitHub" in author_name:
-                continue
-
-            if author_id not in points:
-                points[author_id] = 0
-            points[author_id] += author_points
-
-            if "GitHub" in committer_name:
-                continue
-
-            if committer_id not in points:
-                points[committer_id] = 0
-            points[committer_id] += committer_points
+            if committer_id:
+                points[committer_id] = points.get(committer_id, 0) + int(row['Points'])
+                if committer_id not in user_id_to_names:
+                    user_id_to_names[committer_id] = set()
+                user_id_to_names[committer_id].add(committer_name)
 
     labels = [f"{', '.join(user_id_to_names[user_id])} ({user_id})" for user_id in points.keys()]
     scores = list(points.values())
@@ -128,17 +141,49 @@ def process_csv(file_path: str):
     plt.title('Contribution Points Distribution', loc='left')
     plt.axis('equal')
 
+    open_issues = fetch_open_issues()
+    issues_text = "\n".join([f"- {issue['title']} (#{issue['number']})" for issue in open_issues])
+    plt.gcf().text(0.02, 0.02, f"Open Issues:\n{issues_text}", fontsize=8, ha='left')
+
     output_file = os.path.splitext(file_path)[0] + '_distribution.png'
     plt.savefig(output_file)
     plt.close()
 
-    open_issues = fetch_open_issues()
-    print("Open Issues:")
-    for issue in open_issues:
-        print(f"- {issue['title']} (#{issue['number']})")
+# Function to process contributors CSV and generate a bar graph
+def process_contributors_csv(file_path: str):
+    contributors = []
+    contributions = []
+
+    with open(file_path, mode='r') as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            contributors.append(f"{row['Login']}")
+            contributions.append(int(row['Contributions']))
+
+    plt.figure(figsize=(10, 5))
+    bars = plt.bar(contributors, contributions)
+    plt.xlabel('Contributors')
+    plt.ylabel('Number of Contributions')
+    plt.title(f'{repo} Contributors')
+    plt.xticks(rotation=0)  # Set labels to be horizontal
+
+    # Add labels on top of the bars
+    for bar, contribution in zip(bars, contributions):
+        plt.text(bar.get_x() + bar.get_width() / 2, bar.get_height(), str(contribution), ha='center', va='bottom')
+
+
+    output_file = os.path.splitext(file_path)[0] + '_contributions.png'
+    plt.savefig(output_file)
+    plt.close()
 
 # Fetch commit data and write to CSV
 csv_file_name = fetch_and_write_commits()
 
 # Process the generated CSV file
 process_csv(csv_file_name)
+
+# Fetch contributors data and write to CSV
+contributors_csv_file_name = fetch_and_write_contributors()
+
+# Process the contributors CSV file
+process_contributors_csv(contributors_csv_file_name)
