@@ -1,5 +1,5 @@
 import csv
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt # type: ignore
 from typing import Dict, Set
 import glob
 import os

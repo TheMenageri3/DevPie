@@ -4,6 +4,10 @@ import matplotlib.pyplot as plt # type: ignore
 from typing import Dict, Set
 import os
 import yaml # type: ignore
+from flask import Flask, request, render_template, redirect, url_for, send_from_directory
+from urllib.parse import urlparse
+
+app = Flask(__name__)
 
 # Path to the user's local GitHub CLI configuration file
 config_path = os.path.expanduser('~/.config/gh/hosts.yml')
@@ -13,44 +17,55 @@ with open(config_path, 'r') as file:
     config = yaml.safe_load(file)
     token = config['github.com']['oauth_token']
 
-# GitHub repository details
-owner = 'Web3-Builders-Alliance'
-repo = 'soda'
-base_url = f'https://api.github.com/repos/{owner}/{repo}'
-headers = {
-    'Authorization': f'token {token}'
-}
-
-# Create directory for output files
-output_dir = f'{owner}_{repo}'
-os.makedirs(output_dir, exist_ok=True)
-
-# Keywords to check in commit messages for boilerpolate 
+# Keywords to check in commit messages for boilerplate
 keywords = ["boilerplate", "scaffolding", "scaffold", "scaff", "initial", "setup"]
 
-# # Function to fetch open issues from the repository
-# def fetch_open_issues():
-#     issues_url = f'{base_url}/issues'
-#     response = requests.get(issues_url, headers=headers)
-#     issues = response.json()
-#     open_issues = [issue for issue in issues if issue['state'] == 'open']
-#     return open_issues
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    if request.method == 'POST':
+        repo_url = request.form['repo_url']
+        parsed_url = urlparse(repo_url)
+        path_parts = parsed_url.path.strip('/').split('/')
+        if len(path_parts) == 2:
+            owner, repo = path_parts
+            process_repository(owner, repo)
+            return redirect(url_for('results', owner=owner, repo=repo))
+        else:
+            return "Invalid GitHub URL", 400
+    return render_template('index.html')
 
-# Function to fetch commit data and write to CSV
-def fetch_and_write_commits():
-    """
-    Fetches commit data from a remote repository and writes it to a CSV file.
+@app.route('/results')
+def results():
+    owner = request.args.get('owner')
+    repo = request.args.get('repo')
+    output_dir = f'{owner}_{repo}'
+    return render_template('results.html', owner=owner, repo=repo, output_dir=output_dir)
 
-    This function performs the following steps:
-    1. Fetches a list of commits from the repository.
-    2. For each commit, retrieves detailed information including author, committer, date, message, 
-       lines added, lines deleted, and verification status.
-    3. Calculates a points score based on the commit message, lines added, lines deleted, and verification status.
-    4. Writes the commit data to a CSV file.
+@app.route('/images/<owner_repo>/<filename>')
+def serve_image(owner_repo, filename):
+    return send_from_directory(owner_repo, filename)
 
-    Returns:
-        str: The name of the generated CSV file.
-    """
+def process_repository(owner, repo):
+    base_url = f'https://api.github.com/repos/{owner}/{repo}'
+    headers = {
+        'Authorization': f'token {token}'
+    }
+    output_dir = f'{owner}_{repo}'
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Fetch commit data and write to CSV
+    csv_file_name = fetch_and_write_commits(owner, repo, base_url, headers, output_dir)
+
+    # Process the generated CSV file
+    process_csv(csv_file_name, output_dir)
+
+    # Fetch contributors data and write to CSV
+    contributors_csv_file_name = fetch_and_write_contributors(owner, repo, base_url, headers, output_dir)
+
+    # Process the contributors CSV file
+    process_contributors_csv(contributors_csv_file_name, output_dir, owner, repo)
+
+def fetch_and_write_commits(owner, repo, base_url, headers, output_dir):
     commits_url = f'{base_url}/commits'
     response = requests.get(commits_url, headers=headers)
     commits = response.json()
@@ -88,9 +103,9 @@ def fetch_and_write_commits():
             if verified:
                 points += 25
 
-            if "github" in author.lower():
+            if "github" in author.lower() or "bot" in author.lower():
                 author_id = None
-            if "github" in committer.lower():
+            if "github" in committer.lower() or "bot" in committer.lower():
                 committer_id = None
 
             if author_id:
@@ -98,22 +113,12 @@ def fetch_and_write_commits():
 
     return csv_file_name
 
-# Function to fetch contributors and write to CSV
-def fetch_and_write_contributors():
-    """
-    Fetches the list of contributors from a specified URL and writes their details to a CSV file.
-
-    The function retrieves contributor data from a given URL, filters out any contributors
-    of type 'Bot', and writes the remaining contributors' login, ID, and number of contributions to a CSV file.
-
-    Returns:
-        str: The name of the CSV file created.
-    """
+def fetch_and_write_contributors(owner, repo, base_url, headers, output_dir):
     contributors_url = f'{base_url}/contributors'
     response = requests.get(contributors_url, headers=headers)
     contributors = response.json()
 
-    csv_file_name = os.path.join(output_dir, f'{repo}_contributors.csv')
+    csv_file_name = os.path.join(output_dir, f'{owner}_{repo}_contributors.csv')
     with open(csv_file_name, mode='w', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(["Login", "ID", "Contributions"])
@@ -128,22 +133,7 @@ def fetch_and_write_contributors():
 
     return csv_file_name
 
-# Function to process a single CSV file and generate a distribution plot
-def process_csv(file_path: str):
-    """
-    Processes a CSV file to calculate contribution points for authors and committers,
-    generates a pie chart of the distribution, and saves it as an image file.
-
-    The function excludes rows where the author or committer name contains "github" or "bot".
-    It aggregates points for each unique author and committer, and generates a pie chart
-    showing the distribution of points.
-
-    Additionally, the function fetches open issues from a repository and lists them
-    on the pie chart image.
-
-    Returns:
-        None
-    """
+def process_csv(file_path: str, output_dir: str):
     points: Dict[str, int] = {}
     user_id_to_names: Dict[str, Set[str]] = {}
 
@@ -155,7 +145,6 @@ def process_csv(file_path: str):
             committer_id = row['Committer ID']
             committer_name = row['Committer']
 
-            # Exclude GitHub or bot authors/committers
             if "github" in author_name.lower() or "bot" in author_name.lower():
                 author_id = None
             if "github" in committer_name.lower() or "bot" in committer_name.lower():
@@ -181,21 +170,11 @@ def process_csv(file_path: str):
     plt.title('Contribution Points Distribution', loc='left')
     plt.axis('equal')
 
-    # open_issues = fetch_open_issues()
-    # issues_text = "\n".join([f"- {issue['title']} (#{issue['number']})" for issue in open_issues])
-    # plt.gcf().text(0.02, 0.02, f"Open Issues:\n{issues_text}", fontsize=8, ha='left')
-
     output_file = os.path.join(output_dir, os.path.splitext(os.path.basename(file_path))[0] + '.png')
     plt.savefig(output_file)
     plt.close()
 
-# Function to process contributors CSV and generate a bar graph
-def process_contributors_csv(file_path: str):
-    """
-    Processes a CSV file containing contributor data and generates a bar chart
-    showing the number of contributions for each contributor.
-
-    """
+def process_contributors_csv(file_path: str, output_dir: str, owner, repo):
     contributors = []
     contributions = []
 
@@ -207,28 +186,17 @@ def process_contributors_csv(file_path: str):
 
     plt.figure(figsize=(10, 5))
     bars = plt.bar(contributors, contributions)
-    plt.xlabel('Contributors')
     plt.ylabel('Number of Contributions')
     plt.title(f'{repo} Contributors')
-    plt.xticks(rotation=0)  # Set labels to be horizontal
+    plt.xticks(rotation=0)
 
-    # Add labels on top of the bars
+    # Label the bars with the number of contributions
     for bar, contribution in zip(bars, contributions):
         plt.text(bar.get_x() + bar.get_width() / 2, bar.get_height(), str(contribution), ha='center', va='bottom')
 
-
-    output_file = os.path.join(output_dir, os.path.splitext(os.path.basename(file_path))[0] + '.png')
+    output_file = os.path.join(output_dir, f'{owner}_{repo}_contributors.png')
     plt.savefig(output_file)
     plt.close()
 
-# Fetch commit data and write to CSV
-csv_file_name = fetch_and_write_commits()
-
-# Process the generated CSV file
-process_csv(csv_file_name)
-
-# Fetch contributors data and write to CSV
-contributors_csv_file_name = fetch_and_write_contributors()
-
-# Process the contributors CSV file
-process_contributors_csv(contributors_csv_file_name)
+if __name__ == '__main__':
+    app.run(debug=True)
