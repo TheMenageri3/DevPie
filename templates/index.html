@@ -12,13 +12,13 @@
         <input type="text" id="repo_url" name="repo_url" required>
         <button type="submit">Analyze</button>
 
-        <p>DevPie analyzes the contributions and commits of a GitHub repository.</p>
+        <p>DevPie analyzes the contributions and commits to a GitHub repository.</p>
         <p>The output is meant to be used as the basis of a suggested revenue split amongst the project's contributors.</p>
         <p>Points are awarded to authors and committers based on lines added and deleted:</p>
         <ul>
             <li>5 points for boilerplate commits, 100 points for non-boilerplate</li>
-            <li>1 point for each line added (non-boilerplate commits only)</li>
-            <li>2 points for each line deleted (non-boilerplate commits only)</li>
+            <li>+25 point for each line added (non-boilerplate commits only)</li>
+            <li>+50 points for each line deleted (non-boilerplate commits only)</li>
             <li>+25 points for verified commits</li>
         </ul>
         <p>Boilerplate commits are identified by specific keywords in the commit message. GitHub, automated workflows, and bots are excluded from the Pie.</p>
