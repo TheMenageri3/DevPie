@@ -2,38 +2,6 @@
 
 This script allows users to interact with the GitHub API to retrieve information about a repository's code commits, and to calculate an equity or revenue split based on that history.
 
-## Current Algorithm
-
-1. Assess Contributions
-    - Use the /contributors endpoint to assess contributions.
-    - Award points for lines added and deleted:
-      - 2x points for deleted lines.
-      - 1x points for added lines.
-
-2. Filter Commits
-    - Query the /commits endpoint.
-    - Exclude lines added or deleted in boilerplate and scaffolding code for authors and committers.
-    - Exclude contributions from bots and GitHub.
-
-3. Evaluate Commit Status
-    - Check the status of commits:
-      - Success: 100 points.
-      - Failure: 10 points.
-      - Pending: Continue processing but send an alert message and rerun once all commits are either success or failure.
-
-4. Award Points
-    - Authors: 100 points per commit.
-    - Committers: 75 points per commit.
-    - If the author is also the committer, they receive an additional 50 points (total 150 points).
-    - Verified commits receive a bonus 25 points; unverified commits receive no bonus but are not penalized.
-
-6. Reviewer and Commenter Points
-    - Award points to reviewers:
-      - 100 points for authors.
-      - 75 points for committers.
-    - Award points to commenters:
-      - 10 points for each commenter with at least one comment on a commit or its associated PRs (maximum 10 points).
-
 Additional Considerations:
 - Use the /projects endpoint to consider the repository's projects.
 - From /activity or other available endpoints, add the user's type to the CSV.
